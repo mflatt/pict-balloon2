@@ -5,6 +5,7 @@
          racket/math)
 
 (provide pin-balloon
+         balloon-note
          current-balloon-color
          current-balloon-x-margin
          current-balloon-y-margin
@@ -211,6 +212,27 @@
                     bx by
                     balloon+content)
           balloon+content))
+
+(define balloon-note
+  (make-keyword-procedure
+   (lambda (kws kw-args content)
+     (define-values (more-kws more-kw-args)
+       (let loop ([kws kws] [kw-args kw-args])
+         (cond
+           [(null? kws) (values '(#:spike) '(#f))]
+           [(eq? (car kws) '#:spike) (values kws kw-args)]
+           [(keyword<? '#:spike (car kws))
+            (values (cons '#:spike kws)
+                    (cons #f kw-args))]
+           [else
+            (define-values (new-kws new-kw-args) (loop (cdr kws) (cdr kw-args)))
+            (values (cons (car kws) new-kws) (cons (car kw-args) new-kw-args))])))
+     (define p (blank))
+     (keyword-apply pin-balloon
+                    more-kws more-kw-args
+                    p p cc-find content
+                    null
+                    #:result (lambda (p balloon) balloon)))))
 
 (define (spike->dx spike)
   (case spike
